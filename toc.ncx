@@ -1,9 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <ncx xmlns="http://www.daisy.org/z3986/2005/ncx/" version="2005-1" xml:lang="jpn">
   <head>
-    <meta content="39c6bba8-6049-47a3-9f1d-f5f74e353d65" name="dtb:uid"/>
     <meta content="2" name="dtb:depth"/>
-    <meta content="calibre (3.34.0)" name="dtb:generator"/>
     <meta content="0" name="dtb:totalPageCount"/>
     <meta content="0" name="dtb:maxPageNumber"/>
   </head>
