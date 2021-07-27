@@ -1,0 +1,182 @@
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=yes, viewport-fit=cover" />
+  <!-- <link rel="stylesheet" type="text/css" href="stylesheet.css"> -->
+  <link rel="stylesheet" type="text/css" href="bootstrap.min.css">
+  <script type="text/javascript" src="bootstrap.bundle.min.js"></script>
+  <script type="text/javascript" src="jquery.js"></script>
+  <title>title</title>
+  <style>
+
+    a{float: left;}
+
+    .display {
+      width: 50vw;
+      height: auto;
+    }
+
+    body {
+      background: hotpink;
+      margin: 0;
+      display: -webkit-flex;
+      -webkit-align-items: center;
+    }
+
+    #list {
+      display: none;
+    }
+
+  </style>
+</head>
+<body>
+  <nav id="list">
+    <img src="images/001.jpg"/>
+    <img src="images/002.jpg"/>
+    <img src="images/003.jpg"/>
+    <img src="images/004.jpg"/>
+    <img src="images/005.jpg"/>
+  </nav>
+
+  <a><img class="display" id="ileft"></a>
+  <a><img class="display" id="iright"></a>
+
+<div class="modal fade" tabindex="-1" id="jump_modal">
+  <div class="modal-dialog modal-sm">
+    <div class="modal-content">
+      <div class="modal-header d-flex justify-content-center" style="border: 0;">
+        <h2 class="modal-title" style="color: #20c997;">Jump to Page</h2>
+      </div>
+      <div class="modal-body" style="border: 0;">
+        <input class="container-lg" id="page-number" type="number" pattern="[0-9]{1,4}" min="1" value="1">
+      </div>
+      <div class="modal-footer buttons d-flex justify-content-center" style="border: 0;">
+        <button type="button" class="btn btn-outline-primary">Jump</button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<div class="modal fade" tabindex="-1" id="usage_modal">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header d-flex justify-content-center" style="background: #20c997;">
+        <h1 class="modal-title" style="color: #fff;">Hotkeys</h2>
+      </div>
+      <div class="modal-body" style="border: 0;">
+        <div class="row">
+          <div class="col">p</div>
+          <div class="col">Jump to Page</div>
+        </div>
+        <div class="row">
+          <div class="col">a</div>
+          <div class="col">page forward</div>
+        </div>
+        <div class="row">
+          <div class="col">d</div>
+          <div class="col">page backward</div>
+        </div>
+        <div class="row">
+          <div class="col">w</div>
+          <div class="col">scroll up</div>
+        </div>
+        <div class="row">
+          <div class="col">s</div>
+          <div class="col">scroll down</div>
+        </div>
+      </div>
+      <div class="modal-footer buttons d-flex justify-content-center" style="border: 0;">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const pages = Array.from(document.querySelectorAll('#list > img'));
+let currentPage = 0;
+
+function changePage(pageNum) {
+  const previous = pages[currentPage];
+  const current = pages[pageNum];
+
+  const right = pages[2*pageNum];
+  const left = pages[2*pageNum+1];
+
+  if (right == null)return;
+
+  currentPage = pageNum;
+
+  var display_right = document.getElementById('iright');
+  display_right.src = right.src;
+  display_right.title = 2*pageNum+1
+
+  var display_left = document.getElementById('ileft');
+  if (left == null)display_left.src = pages[0].src;
+  else display_left.src = left.src;
+
+  display_left.title = 2*pageNum+2;
+
+
+  scroll(0,0);
+
+  // document.getElementById('page-num')
+  //   .innerText = [
+  //       (pageNum + 1).toLocaleString(),
+  //       pages.length.toLocaleString()
+  //     ].join('\u200a/\u200a');
+}
+
+$(document).ready(function(){$("#usage_modal").modal('show');})
+
+changePage(0);
+
+document.getElementById('iright').onclick = event =>changePage(currentPage - 1);
+document.getElementById('ileft').onclick = event =>changePage(currentPage + 1);
+
+document.onkeypress = event => {
+  switch (event.key.toLowerCase()) {
+    // Previous Image
+    case 'w':
+	   scrollBy(0, -40);
+	   break;
+    case 'a':
+      changePage(currentPage + 1);
+      break;
+    // Return to previous page
+    case 'q':
+      window.history.go(-1);
+      break;
+    // Next Image
+    case ' ':
+    case 's':
+	  scrollBy(0, 40);
+      break;
+    case 'd':
+      changePage(currentPage - 1);
+      break;
+    case 'p':
+      $(document).ready(function(){$("#jump_modal").modal('show');})
+      break;
+  }// remove arrow cause it won't work
+};
+
+document.onkeydown = event =>{
+  switch (event.keyCode) {
+    case 37: //left
+      changePage(currentPage + 1);
+      break;
+    case 38: //up
+      break;
+    case 39: //right
+      changePage(currentPage - 1);
+      break;
+    case 40: //down
+      break;
+  }
+};
+</script>
+</body>
+</html>
