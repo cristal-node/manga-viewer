@@ -17,7 +17,7 @@
     }
 
     body {
-      background: hotpink;
+      background: white;
       margin: 0;
       display: -webkit-flex;
       -webkit-align-items: center;
@@ -51,7 +51,7 @@
         <input class="container-lg" id="page-number" type="number" pattern="[0-9]{1,4}" min="1" value="1">
       </div>
       <div class="modal-footer buttons d-flex justify-content-center" style="border: 0;">
-        <button type="button" class="btn btn-outline-primary">Jump</button>
+        <button type="button" onclick="page_jump()" class="btn btn-outline-primary">Jump</button>
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
       </div>
     </div>
@@ -99,7 +99,6 @@ const pages = Array.from(document.querySelectorAll('#list > img'));
 let currentPage = 1;
 
 function changePage(pageNum) {
-  // const previous = pages[currentPage];
   const current = pages[pageNum];
 
   const right = pages[2*pageNum-3];
@@ -117,26 +116,27 @@ function changePage(pageNum) {
   else{
     display_right.removeAttribute("style")
     display_right.src = right.src;
+    display_right.title = 2*pageNum-2
   }
   
   if (left == null)
     display_left.src = pages[0].src;
-  else
+  else{
     display_left.src = left.src;
-
-  // display_right.title = 2*pageNum+1
-
-
-  // display_left.title = 2*pageNum+2;
-
+  display_left.title = 2*pageNum-1;
+  }
 
   scroll(0,0);
 
-  // document.getElementById('page-num')
-  //   .innerText = [
-  //       (pageNum + 1).toLocaleString(),
-  //       pages.length.toLocaleString()
-  //     ].join('\u200a/\u200a');
+}
+
+function page_jump() {
+  var num = Number(document.getElementById('page-number').value);
+  if(num % 2 == 0)
+    changePage( ( num / 2 ) + 1 );
+  else
+    changePage( ( num + 1 ) / 2 );
+  $(document).ready(function(){$("#jump_modal").modal('hide');})
 }
 
 $(document).ready(function(){$("#usage_modal").modal('show');})
