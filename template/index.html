@@ -96,28 +96,38 @@
 
 <script>
 const pages = Array.from(document.querySelectorAll('#list > img'));
-let currentPage = 0;
+let currentPage = 1;
 
 function changePage(pageNum) {
-  const previous = pages[currentPage];
+  // const previous = pages[currentPage];
   const current = pages[pageNum];
 
-  const right = pages[2*pageNum];
-  const left = pages[2*pageNum+1];
+  const right = pages[2*pageNum-3];
+  const left = pages[2*pageNum-2];
 
-  if (right == null)return;
+  if (left == null && right == null)return;
 
   currentPage = pageNum;
 
-  var display_right = document.getElementById('iright');
-  display_right.src = right.src;
-  display_right.title = 2*pageNum+1
-
   var display_left = document.getElementById('ileft');
-  if (left == null)display_left.src = pages[0].src;
-  else display_left.src = left.src;
+  var display_right = document.getElementById('iright');
 
-  display_left.title = 2*pageNum+2;
+  if (left != null && right == null)
+    display_right.style = 'display: none'
+  else{
+    display_right.removeAttribute("style")
+    display_right.src = right.src;
+  }
+  
+  if (left == null)
+    display_left.src = pages[0].src;
+  else
+    display_left.src = left.src;
+
+  // display_right.title = 2*pageNum+1
+
+
+  // display_left.title = 2*pageNum+2;
 
 
   scroll(0,0);
@@ -131,7 +141,7 @@ function changePage(pageNum) {
 
 $(document).ready(function(){$("#usage_modal").modal('show');})
 
-changePage(0);
+changePage(1);
 
 document.getElementById('iright').onclick = event =>changePage(currentPage - 1);
 document.getElementById('ileft').onclick = event =>changePage(currentPage + 1);
