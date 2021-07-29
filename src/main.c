@@ -15,10 +15,19 @@
 // malloc, free
 #include <stdlib.h>
 
+// libzip
+#include <zip.h>
+
 
 
 #define BUFFER_SIZE 4096
 #define PATH_SIZE 256
+
+
+typedef struct document{
+	char html[BUFFER_SIZE], img[BUFFER_SIZE];
+} document;
+
 
 char destination[PATH_SIZE];
 
@@ -48,18 +57,19 @@ char *img(char (*list)[PATH_SIZE], size_t number){
 }
 
 char *html_ready(char *title){
-	char buff[BUFFER_SIZE];
+	document doc;
 	static char out_buff[BUFFER_SIZE];
 
 	FILE *fp = fopen("template/index.html", "r");
 
 
 	// fgets(buff, 1024, fp);
-	fread(buff, BUFFER_SIZE, 1, fp);
+	fread(doc.html, BUFFER_SIZE, 1, fp);
+	fclose(fp);
 
 	// buff[BUFFER_SIZE-1] = 0x00;
 	
-
+	printf("doc.html: [%s]\n", doc.html);
 	size_t count = 0;
 
 	DIR *dir = opendir("template/images");
@@ -90,22 +100,22 @@ char *html_ready(char *title){
 
 
 
-	snprintf(out_buff, BUFFER_SIZE, buff, title, img(images, count));
+	snprintf(out_buff, BUFFER_SIZE, doc.html, title, img(images, count));
 
 	return(out_buff);
 
 }
 
 
-char **unzip(char zip_file){
-	char buf[BUFFER_SIZE];	// buffer
-	struct zip *za;					// zip archive
-	struct zip_file *zf;		// zip file
-	struct zip_stat sb;			// zip file stat
-	int err;								// errors
-	int i, len;
-	int fd;
-	long long sum;
+void unzip(char zip_file){
+	// char buf[BUFFER_SIZE];	// buffer
+	// struct zip *za;					// zip archive
+	// struct zip_file *zf;		// zip file
+	// struct zip_stat sb;			// zip file stat
+	// int err;								// errors
+	// int i, len;
+	// int fd;
+	// long long sum;
 
 /*	if ((za = zip_open(zip_file, 0, &err)) == NULL) {
   	zip_error_to_str(buf, sizeof(buf), err, errno);
@@ -114,12 +124,7 @@ char **unzip(char zip_file){
   }
 */
 
-	char **test = malloc(5*sizeof(char*));
-	for (size_t i = 0; i < 5; ++i){
-		test[i] = malloc(256*(sizeof(char*)));
-		test[i] = "test\n";
-	}
-	return test;
+	return;
 }
 
 int main(int argc, char **argv){
@@ -150,15 +155,8 @@ int main(int argc, char **argv){
 
 
 
-	char **a = unzip();
-	for(size_t i = 0; i < 5; i++){
-		printf("[i]: %s", a[i]);
-		free(a[i]);
-	}
-	free(a);
 
-
-	// printf("%s\n", out_buff);
+	printf("%s\n", out_buff);
 
 	return 0;
 }
