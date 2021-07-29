@@ -7,6 +7,13 @@
 
 // mkdir
 #include <sys/stat.h>
+#include <errno.h>
+
+// exit()
+#include <unistd.h>
+
+// malloc, free
+#include <stdlib.h>
 
 
 
@@ -15,15 +22,18 @@
 
 char destination[PATH_SIZE];
 
-int create_dir(char *path){
-    struct stat st = {0};
-    if (stat(path, &st) == -1)
-    	mkdir(path, 0755);
-    else{
-    	printf("\"%s\" exists! Aborting...\n", );
-    	return 1;
-    }
-  }
+void freeArray(char **p, size_t n){
+  for(size_t i = 0 ; i < n ; i++)
+  	free(p[i]);
+  free(p);
+}
+
+void create_dir(char *path){
+  if (!mkdir(path, 0755))return;
+  if(errno == EEXIST)
+		printf("\"%s\" exists! Aborting...\n", path);
+  exit(1);
+}
 
 char *img(char (*list)[PATH_SIZE], size_t number){
 	
@@ -80,19 +90,72 @@ char *html_ready(char *title){
 
 
 
-	snprintf(out_buff, BUFFER_SIZE, buff, "title", img(images, count));
+	snprintf(out_buff, BUFFER_SIZE, buff, title, img(images, count));
 
 	return(out_buff);
 
 }
 
+
+char **unzip(char zip_file){
+	char buf[BUFFER_SIZE];	// buffer
+	struct zip *za;					// zip archive
+	struct zip_file *zf;		// zip file
+	struct zip_stat sb;			// zip file stat
+	int err;								// errors
+	int i, len;
+	int fd;
+	long long sum;
+
+/*	if ((za = zip_open(zip_file, 0, &err)) == NULL) {
+  	zip_error_to_str(buf, sizeof(buf), err, errno);
+    fprintf(stderr, "can't open zip archive `%s': %s\n", argv[1], buf);
+    exit(EXIT_FAILURE);
+  }
+*/
+
+	char **test = malloc(5*sizeof(char*));
+	for (size_t i = 0; i < 5; ++i){
+		test[i] = malloc(256*(sizeof(char*)));
+		test[i] = "test\n";
+	}
+	return test;
+}
+
 int main(int argc, char **argv){
-	char title[] = "title"
+  if (argc != 3) {
+    fprintf(stderr, "usage: %s archive destination\n", argv[0]);
+    return 1;
+  }
+
+
+
+
+  strcpy(destination, argv[2]);
+  size_t i = strlen(destination);
+  if(destination[i-1]!=0x2f)
+  	destination[i] = 0x2f;
+
+  char title[PATH_SIZE];
+	for(i = 0; (argv[1][i] != 0x00) && (argv[1][i] != 0x2e); i++)
+		title[i] = argv[1][i];
+	title[++i] = 0x00;
 
 	strcat(destination, title);
-	create_dir(destination);
+	// create_dir(destination);
+
+	// printf("dest: %s", destination);
 	
 	char *out_buff = html_ready(title);
+
+
+
+	char **a = unzip();
+	for(size_t i = 0; i < 5; i++){
+		printf("[i]: %s", a[i]);
+		free(a[i]);
+	}
+	free(a);
 
 
 	// printf("%s\n", out_buff);
