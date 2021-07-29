@@ -21,7 +21,7 @@ LDFLAGS=$(PTHREAD) -export-dynamic
 OBJS=	main.o
 
 all: $(OBJS)
-	$(LD) -o $(TARGET) $(OBJS) $(LDFLAGS)
+	$(LD) -o $(TARGET) $(OBJS) $(LDFLAGS) -lzip
 	
 main.o: src/main.c
 	$(CC) -c $(CCFLAGS) src/main.c -o main.o
