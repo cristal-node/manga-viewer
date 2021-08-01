@@ -3,13 +3,13 @@
 
 // file listing
 #include <sys/types.h>
-#include <dirent.h>
+// #include <dirent.h>
 
 // mkdir
 #include <sys/stat.h>
 #include <errno.h>
 
-// exit()
+// exit() ,write, close
 #include <unistd.h>
 
 // malloc, free
@@ -24,7 +24,7 @@
 // copy file (2)
 // #include <iostream>	// ??
 // #include <cstdio>    // fopen, fclose, fread, fwrite, BUFSIZ
-// #include <ctime>
+// #include <time.h>	// clock
 // using namespace std;
 
 
@@ -32,17 +32,18 @@
 // #define BUFFER_SIZE 4096
 #define PATH_SIZE 256
 
-long	doc_img_size;
+int img_name_size;
+int	doc_img_size;
 char	*doc_html,
 			*doc_img,
 			archive[PATH_SIZE],
 			destination[PATH_SIZE],
 			title[PATH_SIZE];
 
-void get_title(char *path){
+int set_title(char *path){
 	size_t count = 0;
 	title[count] = 0x00;
-	for(size_t i = 0; (path[i] != 0x00) && (path[i] != 0x2e); ++i){
+	for(size_t i = 0; (path[i] != 0x00) && (path[i] != 0x2e); i++){
 		if(path[i] == 0x2f){
 			count = 0;
 			title[count] = 0x00;
@@ -53,21 +54,22 @@ void get_title(char *path){
 	if(count)
 		title[count] = 0x00;
 	else{
-		printf("error file name");
-		exit(EXIT_FAILURE);
+		fprintf(stderr, "error file name");
+		return 0;
 	}
+	return 1;
 }
 
-void create_dir(char *path){
-  if (!mkdir(path, 0755))return;
+int create_dir(char *path){
+  if (!mkdir(path, 0755))return 1;
   if(errno == EEXIST)
-		printf("\"%s\" exists! Aborting...\n", path);
-  exit(EXIT_FAILURE);
+		fprintf(stderr, "\"%s\" exists! Aborting...\n", path);
+  return 0;
 }
 
 // https://stackoverflow.com/questions/10195343/
 // copy-a-file-in-a-sane-safe-and-efficient-way
-void cp(char *from, char *to) {
+int cp(char *from, char *to) {
 	char tmp_to[PATH_SIZE];
 	strcpy(tmp_to, destination);
 	strcat(tmp_to, to);
@@ -84,12 +86,12 @@ void cp(char *from, char *to) {
   FILE* dest = fopen(tmp_to, "wb");
 
 	if(!source){
-		printf("can't open: %s", from);
-		exit(EXIT_FAILURE);
+		fprintf(stderr, "can't open: %s", from);
+		return 0;
 	}
 	if(!dest){
-		printf("can't write: %s", to);
-		exit(EXIT_FAILURE);
+		fprintf(stderr, "can't write: %s", to);
+		return 0;
 	}
 
   // clean and more secure
@@ -101,68 +103,59 @@ void cp(char *from, char *to) {
 
   fclose(source);
   fclose(dest);
+  return 1;
 }
 
 
 
 void img(const char *image){
-	char tmp_buff[30];
-	snprintf(tmp_buff, 30, "<img src=\"images/%s\"/>\n", image);
+	char tmp_buff[img_name_size];
+	snprintf(tmp_buff, img_name_size, "<img src=\"images/%s\"/>\n", image);
 	strcat(doc_img, tmp_buff);
 }
 
-void html_ready(){
+int html_ready(){
 	char	*tmp_buff,
 				tmp_path[PATH_SIZE];
 
 	FILE *fp = fopen("template/index.html", "r");
 	if(!fp){
-		printf("missing template/index.html");
-		exit(EXIT_FAILURE);
+		fprintf(stderr, "missing template/index.html");
+		return 0;
 	}
  
-	// Get the number of bytes 
+	// Get the number of bytes,
+	// stat size might also work
 	fseek(fp, 0L, SEEK_END);
 	long numbytes = ftell(fp);
 	 
-	// reset the file position indicator to 
-	// the beginning of the file 
-	fseek(fp, 0L, SEEK_SET);	
+	// reset seek
+	// fseek(fp, 0L, SEEK_SET);
+	rewind(fp);	// works same
 	 
-	// grab sufficient memory for the
-	// buffer to hold the text
-	tmp_buff = (char*)calloc(numbytes, sizeof(char));
+	// +1 maybe for the null byte
+	tmp_buff = (char*)calloc(numbytes+1, sizeof(char));
 	 
 	// memory error
 	if(tmp_buff == NULL){
-		printf("not sufficient memory");
-		exit(EXIT_FAILURE);
+		fprintf(stderr, "not sufficient memory");
+		return 0;
 	}
-	 
+
+	// fgets(buff, 1024, fp);
+
 	// copy all the text into the buffer
 	fread(tmp_buff, sizeof(char), numbytes, fp);
 	fclose(fp);
-	 
-	// confirm we have read the file by
-	// outputing it to the console 
-	// printf("The file called test.dat contains this text\n\n%s", tmp_buff);
-	 
-
-
-
-	// fgets(buff, 1024, fp);
-	// fread(tmp_buff, BUFFER_SIZE, 1, fp);
-	// fclose(fp);
 
 	numbytes = numbytes + doc_img_size;
 	doc_html = (char*)calloc(numbytes, sizeof(char));
 	if(doc_html == NULL){
-		printf("not sufficient memory");
-		exit(EXIT_FAILURE);
+		fprintf(stderr, "not sufficient memory");
+		return 0;
 	}
 	snprintf(doc_html, numbytes, tmp_buff, title, doc_img);
 
-	// free the memory we used for the buffer 
 	free(tmp_buff);
 	free(doc_img);
 
@@ -175,10 +168,11 @@ void html_ready(){
 	fwrite(doc_html, sizeof(char), strlen(doc_html), fp);
 	fclose(fp);
 	free(doc_html);
+	return 1;
 }
 
 
-void unzip(){
+int unzip(){
 	char buf[BUFSIZ];	// buffer
 	struct zip *za;					// zip archive
 	struct zip_file *zf;		// zip file
@@ -193,37 +187,44 @@ void unzip(){
 	if ((za = zip_open(archive, 0, &err)) == NULL) {
   	zip_error_to_str(buf, sizeof(buf), err, errno);
     fprintf(stderr, "can't open archive: %s[%s]\n", archive, buf);
-    exit(EXIT_FAILURE);
+    return 0;
   }
 
+  // when the zip is empty
   int index_size = zip_get_num_entries(za, 0);
   if(!index_size){
   	fprintf(stderr, "the archive is empty");
   	if (zip_close(za) == -1)
   		fprintf(stderr, "Can't close archive: %s\n", archive);
-  	exit(EXIT_FAILURE);
+  	return 0;
   }
-  doc_img_size = 30L * index_size;
+  const char *tmp_char = zip_get_name(za, 0, 0);
+  if(tmp_char == NULL)return 0;
+
+  // size of each img element
+  img_name_size = 30 + strlen(tmp_char);
+
+  //size of all img elements
+  doc_img_size = img_name_size * index_size;
 	doc_img = (char*)calloc(doc_img_size, sizeof(char));
 
 	if(doc_img == NULL){
 		fprintf(stderr, "not sufficient memory");
-		exit(EXIT_FAILURE);
+		return 0;
 	}
 
-  create_dir(images_path);
+  if(!create_dir(destination)) return 0;
+  if(!create_dir(images_path)) return 0;
 
 	for (int i = 0; i < index_size; i++) {
   	if (zip_stat_index(za, i, 0, &sb)) {
   		printf("File[%s] Line[%d]\n", __FILE__, __LINE__);
   		continue;
   	}
-    // printf("Name: [%s], ", sb.name);
     if (sb.name[strlen(sb.name)-1] == 0x2f){
     	strcpy(tmp_path, images_path);
       strcat(tmp_path, sb.name);
-      // printf("path: %s", tmp_path);
-      create_dir(tmp_path);
+      if(!create_dir(tmp_path)) return 0;
       continue;
     }
 
@@ -237,12 +238,16 @@ void unzip(){
 
     strcpy(tmp_path, images_path);
     strcat(tmp_path, sb.name);
+
+    // should also work with fopen, fwrite, fclose
+    // it's taking different header
     int fd = open(tmp_path, O_RDWR | O_TRUNC | O_CREAT, 0644);
     if(fd < 0){
     	fprintf(stderr, "can't create file: %s\n",tmp_path);
       continue;
     }
 
+    // write the file
 		int sum = 0;
 		while (sum != sb.size) {
     	int len = zip_fread(zf, buf, BUFSIZ);
@@ -254,50 +259,80 @@ void unzip(){
       sum += len;
     }
     close(fd);
-    zip_fclose(zf);
+    zip_fclose(zf);	// zip file close
   }
 
+  // will the archive break, if not close?
+  // (should be opened as read-only)?
   if (zip_close(za) == -1)
   	fprintf(stderr, "Can't close archive: %s\n", archive);
+  return 1;
+}
 
+void worker(char *archive_input, char *destination_input){
+	// clock_t start, end;
+	// start = clock();
+
+  strcpy(archive, archive_input);	// set archive path
+
+  strcpy(destination, destination_input);
+  size_t i = strlen(destination);
+  if(destination[i-1]!=0x2f)	// add '/' at the end,
+  	destination[i++] = 0x2f;	// if not present
+  destination[i] = 0x00;	// add '\0' (null byte)
+
+  if(!set_title(archive_input)) return;	// set title
+	strcat(destination, title); // set destination
+	i = strlen(destination);
+	destination[i++] = 0x2f;	// add '/' at the end
+	destination[i] = 0x00;	// add '\0' (null byte)
+
+	// unzip all the images
+	if(!unzip()) return;
+	
+	// create the html
+	if(!html_ready()) return;
+
+	// copy rest of the files
+	if(!cp("template/bootstrap.bundle.min.js", "bootstrap.bundle.min.js"))return;
+	if(!cp("template/bootstrap.bundle.min.js.map", "bootstrap.bundle.min.js.map"))return;
+	if(!cp("template/bootstrap.min.css", "bootstrap.min.css"))return;
+	if(!cp("template/bootstrap.min.css.map", "bootstrap.min.css.map"))return;
+	if(!cp("template/jquery.js","jquery.js"))return;
+	if(!cp("template/script.js", "script.js"))return;
+	if(!cp("template/stylesheet.css", "stylesheet.css"))return;
+
+  printf("done: %s\n", title);
+
+	// end = clock();
+
+  // printf("CLOCKS_PER_SEC: %ld\n", CLOCKS_PER_SEC);
+  // printf("CPU-TIME END - START: %ld\n", end - start);
+  // printf("TIME(SEC): %ld\n", (end - start) / CLOCKS_PER_SEC);
+  // printf("---------------------------\n");
 }
 
 int main(int argc, char **argv){
-  if (argc != 3) {
+	// clock_t start, end;
+	// start = clock();
+
+  if (argc < 3) {
     fprintf(stderr, "usage: %s archive destination\n", argv[0]);
     return 1;
   }
 
-  strcpy(archive, argv[1]);	// set archive path
+  for (size_t i = 1; i < argc-1; i++){
+  	worker(argv[i], argv[argc-1]);
+  }
+/*
+	end = clock();
 
-  strcpy(destination, argv[2]);
-  size_t i = strlen(destination);
-  if(destination[i-1]!=0x2f)
-  	destination[i++] = 0x2f;
-  destination[i] = 0x00;
-
-  get_title(argv[1]);	// set title
-	strcat(destination, title); // set destination
-	i = strlen(destination);
-	destination[i++] = 0x2f;
-	destination[i] = 0x00;
-
-	create_dir(destination);
-	unzip();
-	
-	html_ready();
-
-	// copy rest of the files
-	cp("template/bootstrap.bundle.min.js", "bootstrap.bundle.min.js");
-	cp("template/bootstrap.bundle.min.js.map", "bootstrap.bundle.min.js.map");
-	cp("template/bootstrap.min.css", "bootstrap.min.css");
-	cp("template/bootstrap.min.css.map", "bootstrap.min.css.map");
-	cp("template/jquery.js","jquery.js");
-	cp("template/script.js", "script.js");
-	cp("template/stylesheet.css", "stylesheet.css");
-
-
-	// printf("%s\n", doc_html);
-
+	printf("Result:\n");
+  printf("CLOCKS_PER_SEC: %ld\n", CLOCKS_PER_SEC);
+  printf("CPU-TIME START: %ld\n", start);
+  printf("CPU-TIME END: %ld\n", end);
+  // printf("CPU-TIME END - START: %ld\n", end - start);
+  printf("TIME(SEC): %ld\n", (end - start) / CLOCKS_PER_SEC);
+*/
 	return 0;
 }
