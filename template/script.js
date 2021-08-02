@@ -1,11 +1,17 @@
 const pages = Array.from(document.querySelectorAll('#list > img'));
 let currentPage = 1;
+var shift_right = false;
 
 function changePage(pageNum) {
-  const current = pages[pageNum];
 
-  const right = pages[2*pageNum-3];
-  const left = pages[2*pageNum-2];
+  var left, right;
+  if(shift_right){
+    right = pages[2*pageNum-2];
+    left = pages[2*pageNum-1];
+  } else{
+    right = pages[2*pageNum-3];
+    left = pages[2*pageNum-2];
+  }
 
   if (left == null && right == null)return;
 
@@ -19,30 +25,40 @@ function changePage(pageNum) {
   else{
     display_right.removeAttribute("style")
     display_right.src = right.src;
-    display_right.title = 2*pageNum-2
+    if(shift_right)
+      display_right.title = 2*pageNum-1;
+    else
+      display_right.title = 2*pageNum-2;
   }
   
   if (left == null)
     display_left.src = pages[0].src;
   else{
     display_left.src = left.src;
-  display_left.title = 2*pageNum-1;
+    if(shift_right)
+      display_left.title = 2*pageNum;
+    else
+      display_left.title = 2*pageNum-1;
   }
 
   scroll(0,0);
-
 }
 
 function page_jump() {
   var num = Number(document.getElementById('page-number').value);
-  if(num % 2 == 0)
-    changePage( ( num / 2 ) + 1 );
-  else
-    changePage( ( num + 1 ) / 2 );
+  if(shift_right){
+    if(num % 2 == 0)
+      changePage(num/2);
+    else
+      changePage((num+1)/2);
+  } else{
+    if(num % 2 == 0)
+      changePage((num/2)+1);
+    else
+      changePage((num+1)/2);
+  }
   $(document).ready(function(){$("#jump_modal").modal('hide');})
 }
-
-$(document).ready(function(){$("#usage_modal").modal('show');})
 
 changePage(1);
 
@@ -53,8 +69,8 @@ document.onkeypress = event => {
   switch (event.key.toLowerCase()) {
     // Previous Image
     case 'w':
-	   scrollBy(0, -40);
-	   break;
+      scrollBy(0, -40);
+      break;
     case 'a':
       changePage(currentPage + 1);
       break;
@@ -65,7 +81,7 @@ document.onkeypress = event => {
     // Next Image
     case ' ':
     case 's':
-	  scrollBy(0, 40);
+    scrollBy(0, 40);
       break;
     case 'd':
       changePage(currentPage - 1);
@@ -73,18 +89,29 @@ document.onkeypress = event => {
     case 'p':
       $(document).ready(function(){$("#jump_modal").modal('show');})
       break;
+    case '?':
+      $(document).ready(function(){$("#usage_modal").modal('show');})
+      break;
   }// remove arrow cause it won't work
 };
 
 document.onkeydown = event =>{
   switch (event.keyCode) {
     case 37: //left
-      changePage(currentPage + 1);
+      if(event.shiftKey){
+        shift_right = false;
+        changePage(currentPage);
+      } else
+        changePage(currentPage + 1);
       break;
     case 38: //up
       break;
     case 39: //right
-      changePage(currentPage - 1);
+      if(event.shiftKey){
+        shift_right = true;
+        changePage(currentPage);
+      } else
+        changePage(currentPage - 1);
       break;
     case 40: //down
       break;
